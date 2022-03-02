@@ -1,10 +1,12 @@
 const express = require('express')
 const bodyParser = require('body-parser')
 const routes = require('./routes')
+const helmet = require('helmet')
 
 const { PORT = 5000, BASE_PATH } = process.env
 const app = express()
 
+app.use(helmet())
 app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({ extended: true }))
 

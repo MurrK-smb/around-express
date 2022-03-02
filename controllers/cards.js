@@ -8,3 +8,5 @@ const getCards = (req, res) => {
   .then(cards => res.send({ data: JSON.parse(cards)}))
   .catch(() => res.send({ message: 'Error has occurred on the server'}))
 }
+
+module.exports = getCards
