@@ -1,28 +1,98 @@
-const path = require('path')
-const { readFile } = require('../helpers')
-
-const USERS_PATH = path.join(__dirname, '../data/users.json')
+const User = require('../models/user')
 
 const getUsers = (req, res) => {
-  readFile(USERS_PATH)
-    .then(users => res.send({ data: JSON.parse(users)}))
-    .catch(() => res.send({ message: 'Error has occurred on the server'}))
+  User.find({})
+    .then((users) => res.send({ data: users }))
+    .catch(() => res.status(500).send({ message: 'An error occurred'}))
 }
 
 const getUser = (req, res) => {
-  readFile(USERS_PATH)
-    .then(users => {
-      const { id } = req.params
-      const parsedUsersData = JSON.parse(users)
-      const user = parsedUsersData.find(({ _id: userId }) => userId === id)
-
-      if (!user) {res.status(404).send({ message: 'User ID not found' })}
-      else {res.send({ data: user })}
+  const { id } = req.params
+  User.findById(id)
+    .orFail(() => {
+      const error = new Error('User Id not found')
+      error.statusCode = 404
+      throw error
     })
-    .catch(() => res.status(500).send({ message: 'Error has occurred on the server' }))
+    .then((users) => res.send({ data: users }))
+    .catch((err) => {
+      if (err.name === 'CastError') {
+        res.status(400).send({ message: 'Invalid user Id'})
+      } else if (err.statusCode === 404) {
+        res.status(404).send({ message: err.message })
+      } else {
+        res.status(500).send({ message: 'An error has occurred on the server'})
+      }
+    })
+}
+
+const createUser = (req, res) => {
+  const { name, about, avatar } = req.body
+  User.create({ name, about, avatar })
+    .then((user) => res.status(201).send({ data: user}))
+    .catch((err) => {
+      if (err.name === 'ValidationError') {
+        res.status(400).send({
+          message: `${Object.values(err.errors).map((error) => error.message).join(', ')}`
+        })
+      }
+      else {
+        res.status(500).send({ message: 'An error has occurred on the server'})
+      }
+    })
+}
+
+const updateUserInfo = (id, body, res) => {
+  User.findByIdAndUpdate(id, body, { new: true, runValidators: true })
+    .orFail(() => {
+      const error = new Error('User Id not found')
+      error.statusCode = 404
+      throw error
+    })
+    .then((user) => res.send({ data: user }))
+    .catch((err) => {
+      if (err.name === 'Validation Error') {
+        res.status(403).send({ message: `${Object.values(err.errors).map((error) => error.message).join(', ')}`})
+      } else if (err.name === 'CastError') {
+        res.status(400).send({ message: 'Invalid user Id'})
+      } else {
+        res.status(500).send({ message: 'An error has occurred on the server' })
+      }
+    })
+}
+
+const updateUserAvatar = (req, res) => {
+  const { avatar } = req.body
+  const id = req.user._id
+  User.findByIdAndUpdate(id, { avatar }, { new: true })
+    .orFail(() => {
+      const error = new Error('Avatar Id not found')
+      error.statusCode = 404
+      throw error
+    })
+    .then((user) => {
+      console.error();
+      if (!user) {
+        throw error;
+      } else {
+        res.status(201).send({ data: user });
+      }
+    })
+    .catch((err) => {
+      if (err.name === 'ValidationError') {
+        res.status(404).send({ message: 'Id not found' });
+      } else if (err.name === 'CastError') {
+        res.status(400).send({ message: 'Invalid Id' });
+      } else {
+        res.status(500).send({ message: 'An error has occurred on the server' });
+      }
+    })
 }
 
 module.exports = {
   getUsers,
-  getUser
+  getUser,
+  createUser,
+  updateUserInfo,
+  updateUserAvatar
 }

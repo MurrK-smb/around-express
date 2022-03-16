@@ -17,6 +17,11 @@ app.use(helmet())
 app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({ extended: true }))
 
+app.use((req, res, next) => {
+  req.user = { _id: '622afb8a9b4de5837c2467a7' }
+  next()
+})
+
 app.use('/', routes)
 
 app.listen(PORT, () => {
