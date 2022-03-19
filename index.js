@@ -2,7 +2,7 @@ const express = require('express')
 const mongoose = require('mongoose')
 const helmet = require('helmet')
 
-const { PORT = 5000, BASE_PATH } = process.env
+const { PORT = 3000, BASE_PATH } = process.env
 const app = express()
 
 const userRouter = require('./routes/users')
@@ -19,6 +19,10 @@ app.use(express.urlencoded({ extended: true }))
 app.use((req, res, next) => {
   req.user = { _id: '622afb8a9b4de5837c2467a7' }
   next()
+})
+
+app.use((req, res) => {
+  res.status(404).send({ message: 'The requested resource was not found :(' })
 })
 
 app.use('/users', userRouter)

@@ -1,9 +1,16 @@
 const User = require('../models/user')
+const {
+  CREATED_SUCCESS,
+  BAD_REQUEST_ERROR,
+  UNAUTHORIZED_ERROR,
+  NOT_FOUND_ERROR,
+  INTERNAL_SERVER_ERROR
+} = require('../utils/constants')
 
 const getUsers = (req, res) => {
   User.find({})
     .then((users) => res.send({ data: users }))
-    .catch(() => res.status(500).send({ message: 'An error occurred'}))
+    .catch(() => res.status(INTERNAL_SERVER_ERROR).send({ message: 'An error occurred'}))
 }
 
 const getUser = (req, res) => {
@@ -11,17 +18,17 @@ const getUser = (req, res) => {
   User.findById(id)
     .orFail(() => {
       const error = new Error('User Id not found')
-      error.statusCode = 404
+      error.statusCode = NOT_FOUND_ERROR
       throw error
     })
     .then((users) => res.send({ data: users }))
     .catch((err) => {
       if (err.name === 'CastError') {
-        res.status(400).send({ message: 'Invalid user Id'})
-      } else if (err.statusCode === 404) {
-        res.status(404).send({ message: err.message })
+        res.status(BAD_REQUEST_ERROR).send({ message: 'Invalid user Id'})
+      } else if (err.statusCode === NOT_FOUND_ERROR) {
+        res.status(NOT_FOUND_ERROR).send({ message: err.message })
       } else {
-        res.status(500).send({ message: 'An error has occurred on the server'})
+        res.status(INTERNAL_SERVER_ERROR).send({ message: 'An error has occurred on the server'})
       }
     })
 }
@@ -29,34 +36,37 @@ const getUser = (req, res) => {
 const createUser = (req, res) => {
   const { name, about, avatar } = req.body
   User.create({ name, about, avatar })
-    .then((user) => res.status(201).send({ data: user}))
+    .then((user) => res.status(CREATED_SUCCESS).send({ data: user}))
     .catch((err) => {
       if (err.name === 'ValidationError') {
-        res.status(400).send({
+        res.status(BAD_REQUEST_ERROR).send({
           message: `${Object.values(err.errors).map((error) => error.message).join(', ')}`
         })
       }
       else {
-        res.status(500).send({ message: 'An error has occurred on the server'})
+        res.status(INTERNAL_SERVER_ERROR).send({ message: 'An error has occurred on the server'})
       }
     })
 }
 
-const updateUserInfo = (id, body, res) => {
-  User.findByIdAndUpdate(id, body, { new: true, runValidators: true })
+const updateUserInfo = (req, res) => {
+  const { name, about } = req.body
+  const id = req.user._id
+
+  User.findByIdAndUpdate(id, { name, about }, { new: true, runValidators: true })
     .orFail(() => {
       const error = new Error('User Id not found')
-      error.statusCode = 404
+      error.statusCode = NOT_FOUND_ERROR
       throw error
     })
     .then((user) => res.send({ data: user }))
     .catch((err) => {
       if (err.name === 'Validation Error') {
-        res.status(403).send({ message: `${Object.values(err.errors).map((error) => error.message).join(', ')}`})
+        res.status(UNAUTHORIZED_ERROR).send({ message: `${Object.values(err.errors).map((error) => error.message).join(', ')}`})
       } else if (err.name === 'CastError') {
-        res.status(400).send({ message: 'Invalid user Id'})
+        res.status(BAD_REQUEST_ERROR).send({ message: 'Invalid user Id'})
       } else {
-        res.status(500).send({ message: 'An error has occurred on the server' })
+        res.status(INTERNAL_SERVER_ERROR).send({ message: 'An error has occurred on the server' })
       }
     })
 }
@@ -65,9 +75,9 @@ const updateUserAvatar = (req, res) => {
   const { avatar } = req.body
   const id = req.user._id
   User.findByIdAndUpdate(id, { avatar }, { new: true })
+    const error = new Error('Avatar Id not found')
     .orFail(() => {
-      const error = new Error('Avatar Id not found')
-      error.statusCode = 404
+      error.statusCode = NOT_FOUND_ERROR
       throw error
     })
     .then((user) => {
@@ -75,16 +85,16 @@ const updateUserAvatar = (req, res) => {
       if (!user) {
         throw error;
       } else {
-        res.status(201).send({ data: user });
+        res.status(CREATED_SUCCESS).send({ data: user });
       }
     })
     .catch((err) => {
-      if (err.name === 'ValidationError') {
-        res.status(404).send({ message: 'Id not found' });
+      if (err.name === 'DocumentNotFound') {
+        res.status(NOT_FOUND_ERROR).send({ message: 'Id not found' });
       } else if (err.name === 'CastError') {
-        res.status(400).send({ message: 'Invalid Id' });
+        res.status(BAD_REQUEST_ERROR).send({ message: 'Invalid Id' });
       } else {
-        res.status(500).send({ message: 'An error has occurred on the server' });
+        res.status(INTERNAL_SERVER_ERROR).send({ message: 'An error has occurred on the server' });
       }
     })
 }

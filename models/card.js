@@ -1,4 +1,5 @@
 const mongoose = require('mongoose')
+const validator = require('validator')
 
 const cardSchema = new mongoose.Schema({
   name: {
@@ -11,7 +12,7 @@ const cardSchema = new mongoose.Schema({
     type: String,
     required: [true, 'The "link" field must be filled in'],
     validate: {
-      validator: (value) => /https?:\/\/.+/.test(value),
+      validator: (value) => validator(value),
       message: 'the "link" field must conatain a valid URL',
     },
   },

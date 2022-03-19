@@ -1,4 +1,5 @@
 const mongoose = require('mongoose')
+const validator = require('validator')
 
 const userSchema = new mongoose.Schema({
   name: {
@@ -17,7 +18,7 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: [true, "The 'avatar' field must be filled in"],
     validate: {
-      validator: (value) => /https?:\/\/.+/.test(value),
+      validator: (value) => validator(value),
       message:  "The 'avatar' field must contain a valid URL"
     }
   }
