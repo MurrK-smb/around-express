@@ -12,8 +12,9 @@ const cardSchema = new mongoose.Schema({
     type: String,
     required: [true, 'The "link" field must be filled in'],
     validate: {
-      validator: (value) => validator(value),
-      message: 'the "link" field must conatain a valid URL',
+      validator(link) {
+        return validator.isURL(link);
+      },
     },
   },
   owner: {
